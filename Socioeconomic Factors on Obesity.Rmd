@@ -1,0 +1,119 @@
+---
+title: "Obesity"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r seed}
+set.seed(1)
+```
+
+## R Markdown
+
+Dependent Variable - Obesity Rate
+Independent Variables - Region, Income, Poverty Rate, Real.GDP.Growth
+
+```{r model}
+obesity <- read.csv("Obesity_GDP_PanelData.csv")
+model_obesity <- lm(formula = Adult.Obesity ~ Region + Average.Income + Poverty.Rate + Real.GDP.Growth,
+            data = obesity)
+summary(model_obesity)
+
+# Histogram of Outcome
+predicted_values <- predict(model_obesity)
+hist(predicted_values, main = "Histogram of Predicted Values", xlab = "Predicted Values")
+
+# Measure of Model Fit
+plot(x = predicted_values, y = model_obesity$residuals, main = "Fitted vs. Observed", xlab = "Predicted Values", ylab = "Residuals")
+```
+
+
+```{r residuals}
+hist(model_obesity$residuals)
+boxplot(model_obesity$residuals, main = "Boxplot For Residuals")
+qqnorm(model_obesity$residuals)
+qqline(model_obesity$residuals)
+plot(fitted(model_obesity), model_obesity$residuals)
+```
+
+
+```{r mean_spread}
+
+cat("Average Income Mean:", mean(obesity$Average.Income), "\n")
+cat("Average Income Median:", median(obesity$Average.Income), "\n")
+cat("Average Income Range:" ,range(obesity$Average.Income), "\n")
+cat("Average Income Standard Deviation:", sd(obesity$Average.Income), "\n")
+print("Average Income Quantile Ranges:")
+quantile(obesity$Average.Income)
+
+
+cat("Poverty Rate Mean:", mean(obesity$Poverty.Rate), "\n")
+cat("Poverty Rate Median:", median(obesity$Poverty.Rate), "\n")
+cat("Poverty Rate Range:" ,range(obesity$Poverty.Rate), "\n")
+cat("Poverty Rate Standard Deviation:", sd(obesity$Poverty.Rate), "\n")
+print("Poverty Rate Quantile Ranges:")
+quantile(obesity$Poverty.Rate)
+
+cat("Real GDP Growth Mean:", mean(obesity$Real.GDP.Growth), "\n")
+cat("Real GDP Growth Median:", median(obesity$Real.GDP.Growth), "\n")
+cat("Real GDP Growth Range:" ,range(obesity$Real.GDP.Growth), "\n")
+cat("Real GDP Growth Standard Deviation:", sd(obesity$Real.GDP.Growth), "\n")
+print("Real GDP Growth Quantile Ranges:")
+quantile(obesity$Real.GDP.Growth)
+
+region_count <- obesity %>%
+    group_by(Region) %>%
+    summarise(Count = n(), Proportion = n()/200)
+print(region_count)
+
+```
+
+```{r scatterplots}
+
+
+ggplot(obesity, aes(x = Region, y = Adult.Obesity)) +
+  geom_boxplot() +
+  labs(title = "Obesity Rates by Region",
+       x = "Region",
+       y = "Obesity Rate") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(obesity, aes(x = Average.Income, y = Adult.Obesity)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") + 
+  labs(title = "Obesity Rate vs. Average Income",
+       x = "Average Income",
+       y = "Obesity Rate"
+       ) +
+  theme_minimal()
+
+ggplot(obesity, aes(x = Poverty.Rate, y = Adult.Obesity)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") + 
+  labs(title = "Obesity Rate vs. Poverty Rate",
+       x = "Poverty Rate",
+       y = "Obesity Rate") +
+  theme_minimal()
+
+ggplot(obesity, aes(x = Real.GDP.Growth, y = Adult.Obesity)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") + 
+  labs(title = "Obesity Rate vs. Real GDP Growth",
+       x = "Real GDP Growth",
+       y = "Obesity Rate") +
+  theme_minimal()
+
+pairs(obesity[, c("Average.Income", "Poverty.Rate", "Real.GDP.Growth")], 
+      col = as.numeric(factor(obesity$Region)),
+      pch = as.numeric(factor(obesity$Region)),
+      main = "Scatterplot Matrix with Color-Coded 'Region'")
+legend_plot <- plot(1, type = "n", axes = FALSE, xlab = "", ylab = "")
+legend("topright", legend = levels(factor(obesity$Region)), col = 1:8, pch = 1:8, title = "Region")
+legend_plot
+```
